@@ -1,0 +1,236 @@
+using namespace std;
+const int height = 25;
+const int width = 61;
+#include <iostream>
+#include <Windows.h>
+#include <conio.h>
+#include <ctime>
+
+
+//移动cout光标
+void gotoxy(int x, int y) {
+	COORD pos = { x,y };
+	HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleCursorPosition(hOut, pos);
+}
+
+struct coordinate{
+public:
+	int x;
+	int y;
+};
+
+class Snake {
+public:
+	int head_x;
+	int head_y;
+	int len;
+	int dir;
+	bool is_alive;
+
+	void print_init_snake() {
+		gotoxy(30, 11);
+		cout << "*";
+		gotoxy(30, 12);
+		cout << "*";
+		gotoxy(30, 13);
+		cout << "*";
+		gotoxy(0, 25);
+	}
+
+	//初始化Snake
+	Snake() {
+		head_x = 30;
+		head_y = 13;
+		len = 2;
+		dir = 2;
+		is_alive = true;
+		print_init_snake();
+	}
+
+	void get_input() {
+		int ch;
+		if (_kbhit()) {
+			ch = _getch();
+			switch (ch) {
+			case 87:	//键码：wasd
+				if (dir != 2) {dir = 1;}
+				break;
+			case 65:
+				if (dir != 4) { dir = 3; }
+				break;
+			case 83 :
+				if (dir != 1) { dir = 2; }
+				break;
+			case 68:
+				if (dir != 3) { dir = 4; }
+				break;
+			}
+		}
+	}
+	void change_dir(int dir) {
+		switch (dir){
+		case 1:
+			head_y--;
+			break;
+		case 2:
+			head_y++;
+			break;
+		case 3:
+			head_x--;
+			break;
+		case 4:
+			head_x++;
+			break;
+		}
+	}
+
+	void print_head() {
+		gotoxy(head_x, head_y);
+		cout << "*";
+	}
+	void del_tail(coordinate coor) {
+		gotoxy(coor.x, coor.y);
+		cout << " ";
+	}
+
+};
+
+
+class Item {
+public:
+	int item_x;
+	int item_y;
+
+	bool get_item(Snake s) {
+		if (item_x == s.head_x && item_y == s.head_y) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
+};
+
+class Apple :public Item {
+public:
+	void print_apple(int x,int y) {
+		gotoxy(x, y);
+		cout << "A";
+	}
+
+	void renew_Apple() {
+		item_x= (rand() % 59 ) + 1;
+		item_y= (rand() % 23 ) + 1;
+		gotoxy(item_x, item_y);
+		cout << "A";		
+	}
+
+	Apple(int x, int y) {
+		item_x = x;
+		item_y = y;
+		print_apple(x, y);
+	}
+};
+
+void print_border() {
+	for (int i = 1; i <= width; ++i) {
+		cout << "-";
+	}
+	cout << endl;
+	for (int i = 2; i <= height-1; ++i) {
+		for (int j = 1; j <= width; ++j) {
+			if (j == 1 || j == width) {
+				cout << "|";
+			}
+			else {
+				cout << " ";
+			}
+		}
+		cout << endl;
+	}
+	for (int i = 1; i <= width; ++i) {
+		cout << "-";
+	}
+}
+
+
+void game_main() {
+	print_border();
+	Snake snake;
+	coordinate record[100]= {
+		{30,11},
+		{30,12},
+		{30,13}
+	};
+	int j = 2;
+	int i = 0;
+	Apple a1((rand() % 59) + 1, (rand() % 23) + 1);
+
+	while (1) {
+
+		snake.get_input();
+		snake.change_dir(snake.dir);
+
+		if (snake.head_x == 0 || snake.head_x == 60 || snake.head_y == 0 || snake.head_y == 24) {
+			snake.is_alive = 0;
+		}
+
+		for (int i = 0; i < snake.len; ++i) {
+			if (j - 1 - i <= 0) {
+				if (record[j - 1 - i+100].x == snake.head_x && record[j - 1 - i+100].y == snake.head_y) {
+					snake.is_alive = 0;
+				}
+			}
+			else {
+				if (record[j - 1 - i].x == snake.head_x && record[j - 1 - i].y == snake.head_y) {
+					snake.is_alive = 0;
+				}
+			}
+		}
+
+		if (!a1.get_item(snake)) {
+			snake.print_head();
+			snake.del_tail(record[i]);
+			++i;
+			++j;
+			if (j == 100) {
+				j = 0;
+			}
+			if (i == 100) {
+				i = 0;
+			}
+			record[j] = { snake.head_x,snake.head_y };
+		}
+		else{
+			snake.print_head();
+			++j;
+			record[j] = { snake.head_x,snake.head_y };
+			if (j == 100) {
+				j = 0;
+			}
+			if (i == 100) {
+				i = 0;
+			}
+			a1.renew_Apple();
+			snake.len++;
+
+		}
+
+		gotoxy(0, 25);
+		cout << snake.head_x << "  " << snake.head_y << endl;
+		cout << snake.len << endl;
+
+		if (snake.is_alive == 0) {
+			break;
+			system("pause");
+		}
+
+		Sleep(100);
+	}
+}
+
+void main() {
+	srand((int)time(0));
+	game_main();
+}
